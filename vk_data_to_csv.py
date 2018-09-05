@@ -44,7 +44,7 @@ def file_parse_bdays(json_string):
         result.append(ages)
     helpers.save_file('bdays_new', result)
 
-def file_parse_city(json_string):
+def file_parse_cities(json_string):
     result = list()
     persons = json.loads(json_string)
     for item in persons:  
@@ -78,5 +78,5 @@ for fname in os.listdir(directory):
         path = (os.path.join(directory, fname))
         with io.open(path, encoding='utf-8') as json_file:
             file_parse_bdays(json_file.read())
-            file_parse_city(json_file.read())
+            file_parse_cities(json_file.read())
 

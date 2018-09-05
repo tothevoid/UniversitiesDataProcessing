@@ -31,7 +31,6 @@ def union():
                 val.update({'age':age})
                 result.append(val)
                 break
-
     print(result)
     print(len(result))
 
