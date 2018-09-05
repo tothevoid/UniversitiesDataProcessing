@@ -1,0 +1,11 @@
+#ignore
+*.csv
+*.txt
+*.xlsx
+*.tmp
+*.ipynb
+*.pyc
+*.json
+
+#allow
+!readme.txt
