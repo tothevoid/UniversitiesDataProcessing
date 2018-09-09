@@ -3,6 +3,8 @@ import os
 import csv
 import datetime
 import helpers
+import numpy as np
+import pandas as pd
 
 def union():
     currdir = os.path.dirname(os.path.abspath(__file__))
@@ -47,14 +49,40 @@ def split_files():
     for row in reader:
         row.pop('total')
         row.pop('avg')
-        if row['age'] == '0':
+        if row['age'] == '':
             empty.append(row)
         else:
             nonempty.append(row)
 
     len(empty)
     len(nonempty)
-    helpers.save_file('test', empty)
-    helpers.save_file('validate', nonempty)
+    helpers.save_file('test', nonempty)
+    helpers.save_file('validate', empty)
 
+def quantify_vector(persons):
+    result = list()
+    
+    min_val = persons.min()
+    max_val = persons.max()
+    step = 1
+    ranges = (range(max_val+step))[min_val:max_val+step:step] 
+
+    print(len(ranges))
+
+    for item in persons:
+        for i, val in enumerate(ranges):
+            if item <= val:
+                result.append(i)
+                break
+    if len(persons) == len(result):
+        print('Success')
+    return result
+
+#union()
 split_files()
+
+df = pd.read_csv('test.csv',encoding = 'utf-8')
+vector = df.loc[:,['age']]
+res = quantify_vector(np.array(vector))
+df.update({'age':res})
+df.to_csv('test.csv', sep=';', encoding='utf-8', index=False)

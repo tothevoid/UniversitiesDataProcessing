@@ -78,5 +78,6 @@ for fname in os.listdir(directory):
         path = (os.path.join(directory, fname))
         with io.open(path, encoding='utf-8') as json_file:
             file_parse_bdays(json_file.read())
+            json_file.seek(0)
             file_parse_cities(json_file.read())
 

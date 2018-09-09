@@ -11,6 +11,7 @@ password = ''
 
 def get_freinds(ids_list):
     results = list()
+    total_empty = 0
     count_of_iterations = math.ceil(len(ids_list)/25.0)
     delay = 0
     with open('script.js', 'r') as script_file:
@@ -25,6 +26,7 @@ def get_freinds(ids_list):
         for index,item in enumerate(vk_execute(script, ids_str)):
             if item is None or len(item) == 0:
                 print('empty '+str(sequence[index]))
+                total_empty+=1
                 continue
             j+=1
             friends = list() 
@@ -37,7 +39,8 @@ def get_freinds(ids_list):
         time.sleep(delay)
         time_passed = time.time()-start
         print('iteration %s passed and it takes %ss' % (i+1, round(time_passed,1)))
-    results = save_results('iter%s'%(i),results)
+    results = save_results('last_iter',results)
+    print(total_empty)
 
 def save_results(name,results):
     js = json.dumps(results)
@@ -54,6 +57,8 @@ def vk_execute(script, ids):
     return vk.execute(code=content)
 
 #distinct ids
+
 reader = helpers.read_csv_as_dict('narfu.csv',';')
 reader = [item['id'] for item in reader]
 get_freinds(list(reader))
+
