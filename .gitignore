@@ -6,6 +6,7 @@
 *.ipynb
 *.pyc
 *.json
+vk_auth.py
 test.py
 #allow
 !readme.txt
