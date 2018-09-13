@@ -6,6 +6,6 @@
 *.ipynb
 *.pyc
 *.json
-
+test.py
 #allow
 !readme.txt

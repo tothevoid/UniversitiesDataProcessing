@@ -1,5 +1,6 @@
 import csv
 import os
+import datetime
 
 def save_file(output_name, output_items):
     keys = output_items[0].keys()
@@ -14,3 +15,13 @@ def read_csv_as_dict(relative_path, delimeter):
     with open(path, newline='') as dataset:
         reader = csv.DictReader(dataset,delimiter = delimeter)
         return list(reader)
+
+def datetime_parse(dt):
+    age = ''
+    curr_time = datetime.datetime.now()
+    items = dt.split('.')
+    if len(items) == 3:
+        age = datetime.datetime.now().year - int(items[2]) - 1
+        if (curr_time.month==int(items[1]) and curr_time.day >= int(items[0])) or (curr_time.month>int(items[1])):
+            age = datetime.datetime.now().year - int(items[2])  
+    return age

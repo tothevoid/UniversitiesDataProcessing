@@ -7,6 +7,7 @@ import datetime
 from collections import defaultdict
 from operator import itemgetter
 from collections import OrderedDict
+from pathlib import Path
 
 def file_parse_bdays(json_string):
     result = list()
@@ -15,7 +16,7 @@ def file_parse_bdays(json_string):
         person_Id = item['Id']
         friends_list = item['Friends']
         friends_with_bdays = 0
-        total_friends_age = 0
+        total_friends_age = 0  
         ages = {
             '22': 0,'27': 0,'32': 0,
             '37': 0,'42': 0,'47': 0,
@@ -26,12 +27,9 @@ def file_parse_bdays(json_string):
         friends_quantity = len(friends_list)
         for friend in friends_list:  
             date = friend.get("bdate")
-            if date == 'hidden':
+            if date == '' and len(date.split('.')) < 3:
                 continue
-            items = date.split('.')
-            if len(items) < 3:
-                continue
-            date = datetime.datetime.now().year - int(items[2])
+            helpers.datetime_parse(date)
             total_friends_age += date
             friends_with_bdays += 1
             for k, v in ages.items():
@@ -42,7 +40,7 @@ def file_parse_bdays(json_string):
         avg = 0.0 if friends_with_bdays==0 else round(total_friends_age/friends_with_bdays,2)
         ages.update({'avg':avg})
         result.append(ages)
-    helpers.save_file('bdays_new', result)
+    return result
 
 def file_parse_cities(json_string):
     result = list()
@@ -54,7 +52,7 @@ def file_parse_cities(json_string):
         cities = defaultdict(int)
         for friend in friends_list:  
             city = friend.get("city")
-            if city == 'hidden':
+            if city == '':
                 continue
             cities[city] += 1 
         towns = { 
@@ -68,16 +66,20 @@ def file_parse_cities(json_string):
             j+=1
         towns.update({'id':person_Id, 'total':friends_quantity})
         result.append(towns)
-    helpers.save_file('cities_new', result)
+    return result
 
-currdir = os.path.dirname(os.path.abspath(__file__))
-directory = os.path.join(currdir, 'vk_data')
+def parse_json_files(university):
+    bdays = list()
+    cities = list()
 
-for fname in os.listdir(directory):
-    if fname.endswith(".json"): 
-        path = (os.path.join(directory, fname))
-        with io.open(path, encoding='utf-8') as json_file:
-            file_parse_bdays(json_file.read())
-            json_file.seek(0)
-            file_parse_cities(json_file.read())
+    directory = Path('friends_'+university)
+    for fname in os.listdir(directory):
+        if fname.endswith(".json"): 
+            path = directory / fname
+            with io.open(path, encoding='utf-8') as json_file:
+                bdays += file_parse_bdays(json_file.read())
+                json_file.seek(0)
+                cities += file_parse_cities(json_file.read())
+    helpers.save_file('bdays_' + university, bdays)
+    helpers.save_file('cities_' + university, cities)
 
