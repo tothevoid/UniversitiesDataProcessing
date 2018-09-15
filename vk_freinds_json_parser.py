@@ -4,43 +4,65 @@ import os
 import csv
 import json
 import datetime
+import math
+import pandas as pd
 from collections import defaultdict
 from operator import itemgetter
 from collections import OrderedDict
 from pathlib import Path
 
 def file_parse_bdays(json_string):
-    result = list()
+    result_male = list()
+    result_female = list()
     persons = json.loads(json_string)
+    persons = quantify_ages(persons)
+    total = len(persons)
+    current_iter = 0
     for item in persons:
-        person_Id = item['Id']
-        friends_list = item['Friends']
-        friends_with_bdays = 0
-        total_friends_age = 0  
-        ages = {
-            '22': 0,'27': 0,'32': 0,
-            '37': 0,'42': 0,'47': 0,
-            '52': 0,'57': 0,'62': 0,
-            '67': 0,'72': 0,'77': 0,
-            '82': 0
-        }
-        friends_quantity = len(friends_list)
-        for friend in friends_list:  
-            date = friend.get("bdate")
-            if date == '' and len(date.split('.')) < 3:
-                continue
-            helpers.datetime_parse(date)
-            total_friends_age += date
-            friends_with_bdays += 1
-            for k, v in ages.items():
-                if date <= int(k):
-                    ages[k] += 1
-                    break
-        ages.update({'id' : person_Id,'total' : friends_quantity})
-        avg = 0.0 if friends_with_bdays==0 else round(total_friends_age/friends_with_bdays,2)
-        ages.update({'avg':avg})
-        result.append(ages)
-    return result
+        person_id = int(item['id'])
+        person_sex = item['sex']
+        person_bdate = item['bdate']
+        if math.isnan(person_sex):
+            continue
+        else:
+            person_sex = int(person_sex) - 1
+        #person_bdate = helpers.datetime_parse(item['bdate'])
+        friends_list = item['friends']
+        male = list(filter(lambda x: x['sex'] == float(2), friends_list))
+        female = list(filter(lambda x: x['sex'] == float(1), friends_list))
+        
+        male_ages = quantify(male, person_id, person_sex, person_bdate)
+        female_ages = quantify(female, person_id, person_sex, person_bdate)
+        result_male.append(male_ages)
+        result_female.append(female_ages)
+        
+        print(current_iter*100.0/total,end='\r')
+        current_iter += 1
+    return result_male, result_female
+
+def create_ranges_dict():
+    min_age = 22
+    max_age = 82
+    step = 5
+    dict_range = range(min_age,max_age+1,step)
+    ages = dict()
+    for elm in dict_range:
+        ages[str(elm)] = 0
+    return ages
+
+def quantify(friends_list, root_id, root_sex, root_bdate):
+    ages = create_ranges_dict()
+    for friend in friends_list:  
+        date = friend.get('bdate','')
+        if date == 'nan' or len(date.split('.')) < 3:
+            continue
+        date = helpers.datetime_parse(date)
+        for k, v in ages.items():
+            if date <= int(k):
+                ages[k] += 1
+                break
+    ages.update({'id' : root_id, 'sex' : root_sex, 'age' : root_bdate})
+    return ages
 
 def file_parse_cities(json_string):
     result = list()
@@ -51,7 +73,7 @@ def file_parse_cities(json_string):
         friends_quantity = len(item)
         cities = defaultdict(int)
         for friend in friends_list:  
-            city = friend.get("city")
+            city = friend.get('city')
             if city == '':
                 continue
             cities[city] += 1 
@@ -69,17 +91,52 @@ def file_parse_cities(json_string):
     return result
 
 def parse_json_files(university):
-    bdays = list()
-    cities = list()
+    bdays_male = list()
+    bdays_female = list()
+    #cities = list()
 
     directory = Path('friends_'+university)
     for fname in os.listdir(directory):
         if fname.endswith(".json"): 
             path = directory / fname
             with io.open(path, encoding='utf-8') as json_file:
-                bdays += file_parse_bdays(json_file.read())
-                json_file.seek(0)
-                cities += file_parse_cities(json_file.read())
-    helpers.save_file('bdays_' + university, bdays)
-    helpers.save_file('cities_' + university, cities)
+                male, female = file_parse_bdays(json_file.read())
+                bdays_male += male
+                bdays_female += female
+                print('File passed. Quantity of rows in result: ', len(bdays_male))
+                #json_file.seek(0)
+                #cities += file_parse_cities(json_file.read())
+    male_test = [row for row in bdays_male if row['age']!=0]
+    male_valid = [row for row in bdays_male if row['age']==0]
+   
+    female_test = [row for row in bdays_male if row['age']!=0]
+    female_valid = [row for row in bdays_male if row['age']==0]
+    
+    helpers.save_file(university + '_age_male_test', male_test)
+    helpers.save_file(university + '_age_male_valid', male_valid)
+    helpers.save_file(university + '_age_female_test', female_test)
+    helpers.save_file(university + '_age_female_valid', female_valid)
+    #helpers.save_file('cities_' + university, cities)
 
+def quantify_ages(dataset):
+    result = list()
+    
+    df = pd.DataFrame(dataset)
+    persons = df.loc[:,['bdate']]
+    persons = persons.bdate.apply(helpers.datetime_parse).values
+    min_val = 22
+    max_val = 72
+    step = 1
+
+    ranges = (range(max_val+step))[min_val:max_val+step:step] 
+
+    for item in persons:
+        for i, val in enumerate(ranges):
+            if item <= val:
+                result.append(i)
+                break
+    if len(persons) != len(result):
+        print('Some rows were out of range')
+    
+    df.update({'bdate':result})
+    return df.to_dict('records')

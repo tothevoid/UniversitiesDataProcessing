@@ -8,5 +8,6 @@
 *.json
 vk_auth.py
 test.py
+transform_to_datasets.py
 #allow
 !readme.txt

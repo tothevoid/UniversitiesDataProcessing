@@ -17,7 +17,7 @@ def read_csv_as_dict(relative_path, delimeter):
         return list(reader)
 
 def datetime_parse(dt):
-    age = ''
+    age = 0
     curr_time = datetime.datetime.now()
     items = dt.split('.')
     if len(items) == 3:
