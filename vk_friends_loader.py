@@ -19,6 +19,7 @@ def load_data(data):
     total_empty = 0
     count_of_iterations = math.ceil(len(data[:])/25.0)
     delay = 0
+    start = time.time()
     with open('script.js', 'r') as script_file:
         script = script_file.read()
     for i in range(count_of_iterations):
@@ -28,13 +29,12 @@ def load_data(data):
         sequence = data[:][i*25 : i*25+25]
         ids_str = ','.join(str(e[0]) for e in sequence)
         j = 0
-        start = time.time()
+      
         for index,item in enumerate(vk_execute(script, ids_str)):
             item_id = sequence[index][0]
             item_bdate = sequence[index][1]
             item_sex = sequence[index][2]
             if item is None or len(item) == 0:
-                print('empty '+str(item_id))
                 total_empty+=1
                 continue
             j+=1
@@ -47,8 +47,8 @@ def load_data(data):
                 friends.append({'city':city,'bdate':bdate, 'sex':sex})
             results.append({'id':item_id,'bdate':item_bdate,'sex':item_sex,'friends':friends})
         time.sleep(delay)
-        time_passed = time.time()-start
-        print('iteration %s of %s passed and it takes %ss' % (i+1,count_of_iterations,round(time_passed,1)))
+        time_passed = (time.time()-start) / (i+1) * (count_of_iterations - i) / 60
+        print('iteration %s of %s passed (%sm left)' % (i+1,count_of_iterations,round(time_passed,2)),end='\r')
     save_results('last_iter',results)
     print(total_empty)
 
@@ -67,6 +67,7 @@ def vk_execute(script, ids):
     return vk.execute(code=content)
 
 def get_freinds(university):
+    print('Current university:',university)
     global log
     global password
     global directory
@@ -78,7 +79,6 @@ def get_freinds(university):
     df.id = df.id.astype(int)
     df.bdate = df.bdate.astype(str)
     dataset = df.loc[:,['id','bdate','sex']].values
-    print('default size: ',dataset.size)
     if not os.path.exists(directory):
         os.makedirs(directory)
     load_data(dataset)

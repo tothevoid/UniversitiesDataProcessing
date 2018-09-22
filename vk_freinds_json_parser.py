@@ -14,6 +14,7 @@ from pathlib import Path
 def file_parse_bdays(json_string):
     result_male = list()
     result_female = list()
+    result_all = list()
     persons = json.loads(json_string)
     persons = quantify_ages(persons)
     total = len(persons)
@@ -22,23 +23,24 @@ def file_parse_bdays(json_string):
         person_id = int(item['id'])
         person_sex = item['sex']
         person_bdate = item['bdate']
+
         if math.isnan(person_sex):
             continue
         else:
             person_sex = int(person_sex) - 1
-        #person_bdate = helpers.datetime_parse(item['bdate'])
         friends_list = item['friends']
+        
+        all_ages = quantify(friends_list, person_id, person_sex, person_bdate)
         male = list(filter(lambda x: x['sex'] == float(2), friends_list))
         female = list(filter(lambda x: x['sex'] == float(1), friends_list))
-        
         male_ages = quantify(male, person_id, person_sex, person_bdate)
         female_ages = quantify(female, person_id, person_sex, person_bdate)
         result_male.append(male_ages)
         result_female.append(female_ages)
-        
+        result_all.append(all_ages)
         print(current_iter*100.0/total,end='\r')
         current_iter += 1
-    return result_male, result_female
+    return result_male, result_female, result_all
 
 def create_ranges_dict():
     min_age = 22
@@ -61,7 +63,7 @@ def quantify(friends_list, root_id, root_sex, root_bdate):
             if date <= int(k):
                 ages[k] += 1
                 break
-    ages.update({'id' : root_id, 'sex' : root_sex, 'age' : root_bdate})
+    ages.update({'sex' : root_sex, 'id' : root_id, 'age' : root_bdate})
     return ages
 
 def file_parse_cities(json_string):
@@ -93,6 +95,7 @@ def file_parse_cities(json_string):
 def parse_json_files(university):
     bdays_male = list()
     bdays_female = list()
+    bdays_all = list()
     #cities = list()
 
     directory = Path('friends_'+university)
@@ -100,37 +103,48 @@ def parse_json_files(university):
         if fname.endswith(".json"): 
             path = directory / fname
             with io.open(path, encoding='utf-8') as json_file:
-                male, female = file_parse_bdays(json_file.read())
+                male, female, all_ages = file_parse_bdays(json_file.read())
                 bdays_male += male
                 bdays_female += female
+                bdays_all += all_ages
                 print('File passed. Quantity of rows in result: ', len(bdays_male))
                 #json_file.seek(0)
                 #cities += file_parse_cities(json_file.read())
-    male_test = [row for row in bdays_male if row['age']!=0]
-    male_valid = [row for row in bdays_male if row['age']==0]
+    male_test = [row for row in bdays_male if row['age']!=-1]
+    male_valid = [row for row in bdays_male if row['age']==-1]
    
-    female_test = [row for row in bdays_male if row['age']!=0]
-    female_valid = [row for row in bdays_male if row['age']==0]
+    female_test = [row for row in bdays_female if row['age']!=-1]
+    female_valid = [row for row in bdays_female if row['age']==-1]
     
+    all_test = [row for row in bdays_all if row['age']!=-1]
+    all_valid = [row for row in bdays_all if row['age']==-1]
+
     helpers.save_file(university + '_age_male_test', male_test)
     helpers.save_file(university + '_age_male_valid', male_valid)
     helpers.save_file(university + '_age_female_test', female_test)
     helpers.save_file(university + '_age_female_valid', female_valid)
+    helpers.save_file(university + '_age_all_test', all_test)
+    helpers.save_file(university + '_age_all_valid', all_valid)
     #helpers.save_file('cities_' + university, cities)
 
 def quantify_ages(dataset):
     result = list()
+    min_val = 22
+    max_val = 81
+    step = 1
     
     df = pd.DataFrame(dataset)
+    df.bdate = df.bdate.apply(helpers.datetime_parse)
+    df = df[((df.bdate >= 22) & (df.bdate <= 81)) | (df.bdate == -1)  ]
+    print(df.shape)
     persons = df.loc[:,['bdate']]
-    persons = persons.bdate.apply(helpers.datetime_parse).values
-    min_val = 22
-    max_val = 72
-    step = 1
-
+    persons = persons.bdate.values
+   
     ranges = (range(max_val+step))[min_val:max_val+step:step] 
 
     for item in persons:
+        if item == -1:
+            result.append(-1)
         for i, val in enumerate(ranges):
             if item <= val:
                 result.append(i)

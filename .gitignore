@@ -6,8 +6,9 @@
 *.ipynb
 *.pyc
 *.json
+*.h5
+log_reg.py
 vk_auth.py
 test.py
-transform_to_datasets.py
 #allow
 !readme.txt
