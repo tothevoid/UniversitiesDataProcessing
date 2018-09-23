@@ -13,7 +13,7 @@ for university in universities:
     ages = defaultdict(int)
     for index,row in dates.iterrows():
         bdate = row['bdate']
-        age = str(helpers.datetime_parse())
+        age = str(helpers.datetime_parse(bdate))
         ages[age] += 1
     ages = sorted(ages.items())
     print(ages)

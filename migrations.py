@@ -1,12 +1,10 @@
-import helpers
-from collections import defaultdict
 import pandas as pd
 import numpy as np
-import json
-import math
-import io
-import csv
 from pathlib import Path
+from collections import defaultdict
+import json
+import io
+import helpers
 import ast
 
 with open('cities.json', encoding='utf-8-sig') as fl:

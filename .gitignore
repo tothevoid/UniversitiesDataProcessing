@@ -12,3 +12,5 @@ vk_auth.py
 test.py
 #allow
 !readme.txt
+!cities.json
+!countries.json

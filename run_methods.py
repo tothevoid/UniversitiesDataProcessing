@@ -17,6 +17,6 @@ for university, city in universities.items():
     print('friends parsed')
     #migrations.get_migrations(university, city, 0)
     print('positions loaded')
-    #pos.set_file(university)
+    #pos.get_coords(university)
 
 #cities.get_cities([*universities])
